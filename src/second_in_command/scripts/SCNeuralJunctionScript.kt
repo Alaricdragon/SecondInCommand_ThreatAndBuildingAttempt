@@ -20,7 +20,6 @@ class SCNeuralJunctionScript : EveryFrameScript {
     }
 
     override fun advance(amount: Float) {
-        val digitalSoul = Global.getSector().playerPerson.stats.hasSkill("sc_neural_junction")
         val cargo = Global.getSector().playerFleet.cargo
 
         // delete all player cores
