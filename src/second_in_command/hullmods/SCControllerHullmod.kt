@@ -9,6 +9,7 @@ import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.impl.campaign.DModManager
 import com.fs.starfarer.api.loading.VariantSource
 import com.fs.starfarer.api.util.Misc
+import org.apache.log4j.Logger
 import second_in_command.SCData
 import second_in_command.SCUtils
 import second_in_command.misc.SCSettings
@@ -18,16 +19,23 @@ import second_in_command.skills.PlayerLevelEffects
 
 class SCControllerHullmod : BaseHullMod() {
     fun getFleetData(ship: ShipAPI?) : SCData? {
+        //log?.info("attempting to get fleet data for "+ship?.name+".")
+        //log?.info("has custom data: "+ship?.customData?.contains(secOverrideKey));
         if (ship?.customData?.contains(secOverrideKey) == true) return ship.customData.get(secOverrideKey) as SCData;
-        if (ship?.fleetMember?.fleetData != null) return SCUtils.getFleetData(ship.fleetMember.fleetData.fleet);
+        //log?.info("has fleet member: "+(ship?.mutableStats?.fleetMember?.fleetData?.fleet != null));
+        if (ship?.mutableStats?.fleetMember?.fleetData?.fleet != null) return SCUtils.getFleetData(ship.mutableStats.fleetMember.fleetData.fleet)
+        log?.info("has nothing. ship name: "+ship?.name)
         return null;
     }
     companion object {
+        val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var secOverrideKey = "SiC_SkillsOverrider";
         var noSkillTagHullmodID = "sc_no_skill";
         fun addHullmodAfterShipCreation(ship: ShipAPI?,  data: SCData?){
             //ship.getFleetMember().setCustomData(NANO_THIEF_SIC_HULLMOD_FLEET_KEY,fleet);
+            log?.info("adding ship: "+ship?.name);
             if (ship?.variant?.hasHullMod("sc_skill_controller") == false){
+                log?.info("-adding hullmod...")
                 val OVERWRITER = ship.variant //Global.getSettings().getVariant("Abyssal_XO_ReclaimCore_Blank").clone();
                 OVERWRITER.source = VariantSource.REFIT
                 //OVERWRITER.setWingId(0,skills.stats.OF_fighterToBuild);
@@ -38,21 +46,23 @@ class SCControllerHullmod : BaseHullMod() {
             ship?.setCustomData(secOverrideKey,data);
 
             var id = "sc_skill_controller_";
+            log?.info("-running skills (before)");
             for (skill in data!!.getAllActiveSkillsPlugins()) {
                 skill.applyEffectsBeforeShipCreation(
                     data,
-                    ship!!.fleetMember.stats,
-                    ship.variant,
-                    ship.hullSize,
-                    "${id}_${skill.getId()}"
+                    ship?.fleetMember?.stats,
+                    ship?.variant,
+                    ship?.hullSize,
+                    "${id}_${skill.id}"
                 )
             }
+            log?.info("-running skills (after)");
             for (skill in data.getAllActiveSkillsPlugins()) {
                 skill.applyEffectsAfterShipCreation(
                     data,
                     ship,
-                    ship!!.variant,
-                    "${id}_${skill.getId()}"
+                    ship?.variant,
+                    "${id}_${skill.id}"
                 )
             }
         }
@@ -116,7 +126,7 @@ class SCControllerHullmod : BaseHullMod() {
 
         //var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = getFleetData(ship) ?: return;//SCUtils.getFleetData(fleet)
-
+        SiCMidCombatAdder.map.put(ship.owner,data);
         var skills = SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.applyEffectsAfterShipCreation(data, ship, ship!!.variant, "${id}_${skill.getId()}")
