@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.CampaignFleetAPI
 import com.fs.starfarer.api.combat.BaseHullMod
 import com.fs.starfarer.api.combat.MutableShipStatsAPI
 import com.fs.starfarer.api.combat.ShipAPI
+import com.fs.starfarer.api.combat.ShipVariantAPI
 import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.impl.campaign.DModManager
 import com.fs.starfarer.api.loading.VariantSource
@@ -19,11 +20,49 @@ import second_in_command.skills.PlayerLevelEffects
 
 class SCControllerHullmod : BaseHullMod() {
     fun getFleetData(ship: ShipAPI?) : SCData? {
-        //log?.info("attempting to get fleet data for "+ship?.name+".")
-        //log?.info("has custom data: "+ship?.customData?.contains(secOverrideKey));
+        log?.info("attempting to get fleet data for "+ship?.name+", id: "+ship?.id)
+        log?.info("has custom data: "+ship?.customData?.contains(secOverrideKey));
         if (ship?.customData?.contains(secOverrideKey) == true) return ship.customData.get(secOverrideKey) as SCData;
-        //log?.info("has fleet member: "+(ship?.mutableStats?.fleetMember?.fleetData?.fleet != null));
-        if (ship?.mutableStats?.fleetMember?.fleetData?.fleet != null) return SCUtils.getFleetData(ship.mutableStats.fleetMember.fleetData.fleet)
+        log?.info("has fleet member: "+(ship?.mutableStats?.fleetMember?.fleetData?.fleet != null));
+
+
+        var member = ship?.fleetMember
+        var fleet = member?.fleetData?.fleet
+        if (member != null && fleet != null) {
+            if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
+                //Fix for battles where you join an ally, as those set the members fleet to theirs.
+                fleet = Global.getSector().playerFleet
+            }
+            if (fleet != null && fleet.fleetData != null) return SCUtils.getFleetData(fleet)
+        }
+        log?.info("has parent?: "+(ship?.parentStation != null));
+        if (ship?.parentStation != null){
+            //this is a final backup of sorts. also automaticly saves whatever SCData it gets to avoid more issues.
+            var shipTemp = ship;
+            while (shipTemp?.parentStation != null) shipTemp = shipTemp.parentStation;
+            if (shipTemp?.customData?.contains(secOverrideKey) == true){
+                log?.info("got as overwrite data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
+                var data = shipTemp.customData.get(secOverrideKey) as SCData
+                ship.customData.set(secOverrideKey,data)
+                return data
+            };
+
+            var member = shipTemp?.fleetMember
+            var fleet = member?.fleetData?.fleet
+            if (member != null && fleet != null) {
+                if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
+                    //Fix for battles where you join an ally, as those set the members fleet to theirs.
+                    fleet = Global.getSector().playerFleet
+                }
+                if (fleet != null && fleet.fleetData != null){
+                    log?.info("got as fleet data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
+                    var data = SCUtils.getFleetData(ship.mutableStats.fleetMember.fleetData.fleet)
+                    ship.customData.set(secOverrideKey,data)
+                    return data;
+                }
+            }
+
+        }
         log?.info("has nothing. ship name: "+ship?.name)
         return null;
     }
@@ -33,7 +72,7 @@ class SCControllerHullmod : BaseHullMod() {
         var noSkillTagHullmodID = "sc_no_skill";
         fun addHullmodAfterShipCreation(ship: ShipAPI?,  data: SCData?){
             //ship.getFleetMember().setCustomData(NANO_THIEF_SIC_HULLMOD_FLEET_KEY,fleet);
-            log?.info("adding ship: "+ship?.name);
+            log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
             if (ship?.variant?.hasHullMod("sc_skill_controller") == false){
                 log?.info("-adding hullmod...")
                 val OVERWRITER = ship.variant //Global.getSettings().getVariant("Abyssal_XO_ReclaimCore_Blank").clone();
@@ -44,6 +83,7 @@ class SCControllerHullmod : BaseHullMod() {
                 ship.fleetMember.setVariant(OVERWRITER, false, true) //setVariant(OVERWRITER,false,true);
             }
             ship?.setCustomData(secOverrideKey,data);
+            log?.info("has hullmod: "+ship?.variant?.hasHullMod("sc_skill_controller"))
 
             var id = "sc_skill_controller_";
             log?.info("-running skills (before)");
@@ -74,7 +114,7 @@ class SCControllerHullmod : BaseHullMod() {
             var playerfleet = Global.getSector().playerFleet ?: return
             if (playerfleet.fleetData?.membersListCopy == null) return
             for (member in playerfleet.fleetData.membersListCopy) {
-                if (!member.variant.hasHullMod("sc_skill_controller")) {
+                if (!member.variant.hasHullMod("sc_skill_controller") && !member.variant.hasHullMod(noSkillTagHullmodID)) {
                     if (member.variant.source != VariantSource.REFIT) {
                         var variant = member.variant.clone();
                         variant.originalVariant = null;
@@ -84,13 +124,28 @@ class SCControllerHullmod : BaseHullMod() {
                     }
 
                     member.variant.addPermaMod("sc_skill_controller")
-
+                    addChilds(member.variant);
                     /*var moduleSlots = member.variant.moduleSlots
                     for (slot in moduleSlots) {
                         var module = member.variant.getModuleVariant(slot)
                         module.addMod("sc_skill_controller")
                     }*/
                 }
+            }
+        }
+        private fun addChilds(mothership : ShipVariantAPI){
+            for (id in mothership.moduleSlots){
+                var child = mothership.getModuleVariant(id);
+                if (child.hasHullMod("sc_skill_controller")) continue
+                if (child.source != VariantSource.REFIT) {
+                    var variant = child.clone();
+                    variant.originalVariant = null;
+                    variant.hullVariantId = Misc.genUID()
+                    variant.source = VariantSource.REFIT
+                    mothership.setModuleVariant(id,variant);
+                }
+                child.addPermaMod("sc_skill_controller")
+                addChilds(child);
             }
         }
     }
@@ -116,24 +171,24 @@ class SCControllerHullmod : BaseHullMod() {
 
 
 
-        var member = ship?.mutableStats?.fleetMember ?: return
+        /*var member = ship?.mutableStats?.fleetMember ?: return
         var fleet = member.fleetData?.fleet ?: return
 
         if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
             //Fix for battles where you join an ally, as those set the members fleet to theirs.
             fleet = Global.getSector().playerFleet
-        }
+        }*/
 
         //var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = getFleetData(ship) ?: return;//SCUtils.getFleetData(fleet)
-        SiCMidCombatAdder.map.put(ship.owner,data);
-        var skills = SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
+        if (ship != null) SiCMidCombatAdder.map.put(ship.owner,data);
+        var skills = data.getAllActiveSkillsPlugins();//SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.applyEffectsAfterShipCreation(data, ship, ship!!.variant, "${id}_${skill.getId()}")
         }
 
-        if (data.isPlayer) {
-            PlayerLevelEffects.applyEffectsAfterShipCreation(data, ship, ship!!.variant, "${id}_player")
+        if (data.isPlayer && ship != null) {
+            PlayerLevelEffects.applyEffectsAfterShipCreation(data, ship, ship.variant, "${id}_player")
         }
 
     }
@@ -151,7 +206,7 @@ class SCControllerHullmod : BaseHullMod() {
         var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = SCUtils.getFleetData(fleet)
 
-        var skills = SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
+        var skills = data.getAllActiveSkillsPlugins();//SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.applyEffectsBeforeShipCreation(data, stats, stats.variant, hullSize, "${id}_${skill.getId()}")
         }
@@ -165,18 +220,18 @@ class SCControllerHullmod : BaseHullMod() {
     }
 
     override fun applyEffectsToFighterSpawnedByShip(fighter: ShipAPI?, ship: ShipAPI?, id: String?) {
-        var member = ship?.mutableStats?.fleetMember ?: return
+        /*var member = ship?.mutableStats?.fleetMember ?: return
         var fleet = member.fleetData?.fleet ?: return
 
         if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
             //Fix for battles where you join an ally, as those set the members fleet to theirs.
             fleet = Global.getSector().playerFleet
-        }
+        }*/
 
         //var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = getFleetData(ship) ?: return;//SCUtils.getFleetData(fleet)
 
-        var skills = SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
+        var skills = data.getAllActiveSkillsPlugins();//SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.applyEffectsToFighterSpawnedByShip(data, fighter, ship, "${id}_${skill.getId()}")
         }
@@ -215,18 +270,18 @@ class SCControllerHullmod : BaseHullMod() {
             println()
         }*/
 
-        var member = ship?.fleetMember ?: return
-        var fleet = member.fleetData?.fleet ?: return
+        //var member = ship?.fleetMember ?: return
+        //var fleet = member.fleetData?.fleet ?: return
 
-        if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
+        /*if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
             //Fix for battles where you join an ally, as those set the members fleet to theirs.
             fleet = Global.getSector().playerFleet
-        }
+        }*/
 
         //var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = getFleetData(ship) ?: return;//SCUtils.getFleetData(fleet)
 
-        var skills = SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
+        var skills = data.getAllActiveSkillsPlugins();//SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.advanceInCombat(data, ship, amount)
         }

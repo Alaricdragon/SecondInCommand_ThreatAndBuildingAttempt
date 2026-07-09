@@ -52,6 +52,7 @@ class SiCMidCombatAdder : BaseEveryFrameCombatPlugin(){
             var looking: ShipAPI? = childs[0];
             log?.info("size is: "+childs.size);
             childs.removeAt(0)
+            if (looking?.customData?.containsKey(SCControllerHullmod.secOverrideKey) == true) continue
             log?.info("size after 1 removed is: "+childs.size);
             if (looking == null) continue;
             //child ships can have child ships. destroy them
@@ -64,7 +65,8 @@ class SiCMidCombatAdder : BaseEveryFrameCombatPlugin(){
     private fun isValidShipToConvert(a: ShipAPI) : Boolean{
         if (a.isHulk) return false;
         if (a.hullSize == ShipAPI.HullSize.FIGHTER) return false;
-        if (a.variant.hasHullMod("sc_skill_controller") && (a.fleetMember.fleetData != null || a.customData.contains(SCControllerHullmod.secOverrideKey))) return false;
+        if (a.variant.hasHullMod("sc_skill_controller") && a.fleetMember.fleetData != null) return false;
+        if (a.customData.contains(SCControllerHullmod.secOverrideKey) && a.variant.hasHullMod("sc_skill_controller")) return false;
         if (a.variant.hasHullMod(noSkillTagHullmodID)) return false;
         if (a.variant.hasTag(noSkillTagHullmodID)) return false;
         return true;
