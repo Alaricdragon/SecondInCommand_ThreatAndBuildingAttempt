@@ -28,7 +28,9 @@ class SiCMidCombatAdder : BaseEveryFrameCombatPlugin(){
         for (a in engine.ships) {
             if (!isValidShipToConvert(a)) continue;
             val force = a.originalOwner
-            if (map.containsKey(force)) refitShip(a,map.get(force));
+            if (map.containsKey(force) == false) continue
+            refitShip(a,map.get(force));
+            addAllIncludingKids(a, map.get(force))
             /*for (b in engine.ships) {
                 if (b.originalOwner != force) continue
                 if (b.fleetMember != null && b.fleetMember.fleetData != null && b.fleetMember.fleetData.fleet != null && SCUtils.getFleetData(b.fleetMember.fleetData.fleet) != null) {
@@ -42,22 +44,22 @@ class SiCMidCombatAdder : BaseEveryFrameCombatPlugin(){
         //events.get(0).getEventClass().equals()
     }
 
-    private fun addAllIncludingKids(shipAPI: ShipAPI, data: SCData) {
+    private fun addAllIncludingKids(shipAPI: ShipAPI, data: SCData?) {
         //refitShip(shipAPI, data)
-        val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
+        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         val childs = ArrayList<ShipAPI?>()
         childs.addAll(shipAPI.childModulesCopy)
-        log?.info("attempting to add kids. Kids size is: "+childs.size);
+        //log?.info("attempting to add kids. Kids size is: "+childs.size);
         while (!childs.isEmpty()) {
             var looking: ShipAPI? = childs[0];
-            log?.info("size is: "+childs.size);
+            //log?.info("size is: "+childs.size);
             childs.removeAt(0)
             if (looking?.customData?.containsKey(SCControllerHullmod.secOverrideKey) == true) continue
-            log?.info("size after 1 removed is: "+childs.size);
+            //log?.info("size after 1 removed is: "+childs.size);
             if (looking == null) continue;
             //child ships can have child ships. destroy them
             if (looking.childModulesCopy != null && looking.childModulesCopy.isEmpty()) childs.addAll(looking.childModulesCopy)
-            log?.info("size after all possable added is: "+childs.size);
+            //log?.info("size after all possable added is: "+childs.size);
             //NanoThief_BattleListener.reclaimOverride.put(childs.get(0), (int) (0));
             refitShip(looking, data)
         }
@@ -74,6 +76,5 @@ class SiCMidCombatAdder : BaseEveryFrameCombatPlugin(){
     private fun refitShip(shipAPI: ShipAPI, data: SCData?) {
         if (data == null) return
         SCControllerHullmod.addHullmodAfterShipCreation(shipAPI, data);
-        addAllIncludingKids(shipAPI, data)
     }
 }
