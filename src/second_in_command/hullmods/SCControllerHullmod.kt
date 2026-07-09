@@ -73,15 +73,15 @@ class SCControllerHullmod : BaseHullMod() {
         return null;
     }
     companion object {
-        val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
+        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var secOverrideKey = "SiC_SkillsOverrider";
         var noSkillTagHullmodID = "sc_no_skill";
         fun addHullmodAfterShipCreation(ship: ShipAPI?,  data: SCData?){
-            if (ship == null || ship?.fleetMember == null) return//for command shuttle
+            if (ship == null || ship.fleetMember == null || ship.fleetMember.variant == null) return//for command shuttle
             //ship.getFleetMember().setCustomData(NANO_THIEF_SIC_HULLMOD_FLEET_KEY,fleet);
-            log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
+            //log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
             if (ship?.variant?.hasHullMod("sc_skill_controller") == false){
-                log?.info("-adding hullmod...")
+                //log?.info("-adding hullmod...")
                 val OVERWRITER = ship.variant //Global.getSettings().getVariant("Abyssal_XO_ReclaimCore_Blank").clone();
                 OVERWRITER.source = VariantSource.REFIT
                 //OVERWRITER.setWingId(0,skills.stats.OF_fighterToBuild);
@@ -91,10 +91,10 @@ class SCControllerHullmod : BaseHullMod() {
                 ship.fleetMember.setVariant(OVERWRITER, false, true) //setVariant(OVERWRITER,false,true);
             }
             ship?.setCustomData(secOverrideKey,data);
-            log?.info("has hullmod: "+ship?.variant?.hasHullMod("sc_skill_controller"))
+            //log?.info("has hullmod: "+ship?.variant?.hasHullMod("sc_skill_controller"))
 
             var id = "sc_skill_controller_";
-            log?.info("-running skills (before)");
+            //log?.info("-running skills (before)");
             for (skill in data!!.getAllActiveSkillsPlugins()) {
                 skill.applyEffectsBeforeShipCreation(
                     data,
@@ -104,7 +104,7 @@ class SCControllerHullmod : BaseHullMod() {
                     "${id}_${skill.id}"
                 )
             }
-            log?.info("-running skills (after)");
+            //log?.info("-running skills (after)");
             for (skill in data.getAllActiveSkillsPlugins()) {
                 skill.applyEffectsAfterShipCreation(
                     data,
