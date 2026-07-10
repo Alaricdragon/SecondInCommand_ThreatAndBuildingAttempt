@@ -1,10 +1,10 @@
 Version 2.0.1
-fixes:
+Fixes:
 - Ships created mid combat (threat, omega, and any other modded source) are now effected by Second In Command skills.
-- SiC attrubites that have upercase names can now be spawned in with console commands
-For modders:
-- Added a function, SCControllerHullmod.addHullmodAfterShipCreation() that lets
-- Added a hidden hullmod and tag that when added lets any ship ignore second in command (for moders only)
+- SiC attributes that have uppercase names can now be spawned in with console commands
+Modding:
+- Added a function, SCControllerHullmod.addHullmodAfterShipCreation() that lets you forcefully add SiC skills to a ship in combat
+- Added a hidden hullmod 'sc_no_skill' and tag 'sc_no_skill' that when added lets any ship ignore second in command
 
 Version 2.0.0
 NOT SAVE COMPATIBLE

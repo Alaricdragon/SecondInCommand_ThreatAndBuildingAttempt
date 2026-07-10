@@ -19,64 +19,65 @@ import second_in_command.scripts.SiCMidCombatAdder
 import second_in_command.skills.PlayerLevelEffects
 
 class SCControllerHullmod : BaseHullMod() {
-    fun getFleetData(ship: ShipAPI?) : SCData? {
-        //log?.info("attempting to get fleet data for "+ship?.name+", id: "+ship?.id)
-        //log?.info("has custom data: "+ship?.customData?.contains(secOverrideKey));
-        if (ship?.customData?.contains(secOverrideKey) == true) return ship.customData.get(secOverrideKey) as SCData;
-        //log?.info("has fleet member: "+(ship?.mutableStats?.fleetMember?.fleetData?.fleet != null));
+    companion object {
+        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
+        var secOverrideKey = "SiC_SkillsOverrider";
+        var noSkillTagHullmodID = "sc_no_skill";
+        fun getFleetData(ship: ShipAPI?) : SCData? {
+            //log?.info("attempting to get fleet data for "+ship?.name+", id: "+ship?.id)
+            //log?.info("has custom data: "+ship?.customData?.contains(secOverrideKey));
+            if (ship?.customData?.contains(secOverrideKey) == true) return ship.customData.get(secOverrideKey) as SCData;
+            //log?.info("has fleet member: "+(ship?.mutableStats?.fleetMember?.fleetData?.fleet != null));
 
 
-        var member = ship?.fleetMember;
-        if (member == null) member = ship?.mutableStats?.fleetMember
-        var fleet = member?.fleetData?.fleet
-        if (member != null && fleet != null) {
-            if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
-                //Fix for battles where you join an ally, as those set the members fleet to theirs.
-                fleet = Global.getSector().playerFleet
-            }
-            if (fleet != null && fleet.fleetData != null) return SCUtils.getFleetData(fleet)
-        }
-        //log?.info("has parent?: "+(ship?.parentStation != null));
-        if (ship?.parentStation != null){
-            //this is a final backup of sorts. also automaticly saves whatever SCData it gets to avoid more issues.
-            var shipTemp = ship;
-            var a = 0
-            while (shipTemp?.parentStation != null && a != 7){
-                shipTemp = shipTemp.parentStation
-                a++;//this max number here is to avoid a possable issue. please dont ask maybe?
-            };
-            if (shipTemp?.customData?.contains(secOverrideKey) == true){
-                //log?.info("got as overwrite data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
-                var data = shipTemp.customData.get(secOverrideKey) as SCData
-                ship.customData.set(secOverrideKey,data)
-                return data
-            };
-
-            var member = shipTemp?.fleetMember
-            if (member == null) member = shipTemp?.mutableStats?.fleetMember
+            var member = ship?.fleetMember;
+            if (member == null) member = ship?.mutableStats?.fleetMember
             var fleet = member?.fleetData?.fleet
             if (member != null && fleet != null) {
                 if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
                     //Fix for battles where you join an ally, as those set the members fleet to theirs.
                     fleet = Global.getSector().playerFleet
                 }
-                if (fleet != null && fleet.fleetData != null){
-                    //log?.info("got as fleet data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
-                    var data = SCUtils.getFleetData(fleet)
-                    ship.customData.set(secOverrideKey,data)
-                    return data;
-                }
+                if (fleet != null && fleet.fleetData != null) return SCUtils.getFleetData(fleet)
             }
+            //log?.info("has parent?: "+(ship?.parentStation != null));
+            if (ship?.parentStation != null){
+                //this is a final backup of sorts. also automaticly saves whatever SCData it gets to avoid more issues.
+                var shipTemp = ship;
+                var a = 0
+                while (shipTemp?.parentStation != null && a != 7){
+                    shipTemp = shipTemp.parentStation
+                    a++;//this max number here is to avoid a possable issue. please dont ask maybe?
+                };
+                if (shipTemp?.customData?.contains(secOverrideKey) == true){
+                    //log?.info("got as overwrite data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
+                    var data = shipTemp.customData.get(secOverrideKey) as SCData
+                    ship.customData.set(secOverrideKey,data)
+                    return data
+                };
 
+                var member = shipTemp?.fleetMember
+                if (member == null) member = shipTemp?.mutableStats?.fleetMember
+                var fleet = member?.fleetData?.fleet
+                if (member != null && fleet != null) {
+                    if (!fleet.isPlayerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
+                        //Fix for battles where you join an ally, as those set the members fleet to theirs.
+                        fleet = Global.getSector().playerFleet
+                    }
+                    if (fleet != null && fleet.fleetData != null){
+                        //log?.info("got as fleet data for ship of name, mothership: "+ship.name+", "+shipTemp.name);
+                        var data = SCUtils.getFleetData(fleet)
+                        ship.customData.set(secOverrideKey,data)
+                        return data;
+                    }
+                }
+
+            }
+            //log?.info("has nothing. ship name: "+ship?.name)
+            return null;
         }
-        //log?.info("has nothing. ship name: "+ship?.name)
-        return null;
-    }
-    companion object {
-        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
-        var secOverrideKey = "SiC_SkillsOverrider";
-        var noSkillTagHullmodID = "sc_no_skill";
         fun addHullmodAfterShipCreation(ship: ShipAPI?,  data: SCData?){
+            //log?.info("seeing if I can add ship of; name: "+ship?.name+" id: "+ship?.id);
             if (ship == null || ship.fleetMember == null || ship.fleetMember.variant == null) return//for command shuttle
             //ship.getFleetMember().setCustomData(NANO_THIEF_SIC_HULLMOD_FLEET_KEY,fleet);
             //log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
@@ -91,7 +92,6 @@ class SCControllerHullmod : BaseHullMod() {
                 ship.fleetMember.setVariant(OVERWRITER, false, true) //setVariant(OVERWRITER,false,true);
             }
             ship?.setCustomData(secOverrideKey,data);
-            //log?.info("has hullmod: "+ship?.variant?.hasHullMod("sc_skill_controller"))
 
             var id = "sc_skill_controller_";
             //log?.info("-running skills (before)");
@@ -132,7 +132,7 @@ class SCControllerHullmod : BaseHullMod() {
                     }
 
                     member.variant.addPermaMod("sc_skill_controller")
-                    addChilds(member.variant);
+                    //addChilds(member.variant);
                     /*var moduleSlots = member.variant.moduleSlots
                     for (slot in moduleSlots) {
                         var module = member.variant.getModuleVariant(slot)
@@ -142,6 +142,7 @@ class SCControllerHullmod : BaseHullMod() {
             }
         }
         private fun addChilds(mothership : ShipVariantAPI){
+            //note on kids: this is disabled because the search plugin will find them anyways (SiCMidCombatAdder). Please find a way to add without freezes (I messed up a while loop somewere)
             for (id in mothership.moduleSlots){
                 var child = mothership.getModuleVariant(id);
                 if (child.hasHullMod("sc_skill_controller")) continue
@@ -169,7 +170,9 @@ class SCControllerHullmod : BaseHullMod() {
 
     override fun applyEffectsAfterShipCreation(ship: ShipAPI?, id: String?) {
 
-        if (!Global.getCombatEngine().hasPluginOfClass(SiCMidCombatAdder::class.java)) Global.getCombatEngine().addPlugin(SiCMidCombatAdder())
+        if (!Global.getCombatEngine().hasPluginOfClass(SiCMidCombatAdder::class.java)){
+            Global.getCombatEngine().addPlugin(SiCMidCombatAdder())
+        }
         //Dmod overlay
         if (SCSettings.reducedDmodOverlay) {
             if (!ship!!.variant.hasHullMod("comp_structure") && DModManager.getNumDMods(ship!!.variant) in 1..2) {
@@ -189,7 +192,10 @@ class SCControllerHullmod : BaseHullMod() {
 
         //var fleetData = fleet.fleetData ?: return //Have to do this, as during deserialisation fleetData can be null, causing save corruptions
         var data = getFleetData(ship) ?: return;//SCUtils.getFleetData(fleet)
-        if (ship != null) SiCMidCombatAdder.map.put(ship.owner,data);
+        if (ship != null){
+            //this degree of seperation is because ships owner is always -1 when they spawn.
+            SiCMidCombatAdder.shipsToAdd.put(ship,data)
+        };
         var skills = data.getAllActiveSkillsPlugins();//SCUtils.getFleetData(fleet).getAllActiveSkillsPlugins()
         for (skill in skills) {
             skill.applyEffectsAfterShipCreation(data, ship, ship!!.variant, "${id}_${skill.getId()}")
