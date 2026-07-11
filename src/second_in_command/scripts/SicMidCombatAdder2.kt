@@ -12,19 +12,19 @@ import org.apache.log4j.Logger
 
 class SicMidCombatAdder2 : FleetMemberDeploymentListener{
     init{
-        val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
+        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var map: HashMap<Int?, SCData?> = HashMap<Int?, SCData?>()
         val engine = Global.getCombatEngine()
         //this loop is here because this plugin is added after the first ship is created. basicly gets all 'on spawned' ships and adds them to relevant listeners.
         for (a in engine.ships) {
             if (!isShip(a)) continue;
             if (alreadyReady(a)){
-                log?.info("     HERE: got already has hullmod")
+                //log?.info("     HERE: got already has hullmod")
                 var data: SCData? = SCControllerHullmod.getFleetData(a);
                 if (data == null) continue
                 map.put(a.originalOwner,data);
                 addModules(a,data);
-                log?.info("     HERE: finished already has hullmod")
+                //log?.info("     HERE: finished already has hullmod")
             }
         }
         Global.getCombatEngine().customData.put("SiC_SCDataMap",map);
@@ -32,20 +32,20 @@ class SicMidCombatAdder2 : FleetMemberDeploymentListener{
     override fun reportFleetMemberDeployed(member: DeployedFleetMemberAPI?) {
         val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var a = member?.ship;
-        log?.info(" HERE: started with name, id, hull: "+a?.name+", "+a?.id+", "+a?.hullSpec?.hullId)
+        //log?.info(" HERE: started with name, id, hull: "+a?.name+", "+a?.id+", "+a?.hullSpec?.hullId)
         if (a == null || !isShip(a)) return
-        log?.info("     HERE: got valid ship")
+        //log?.info("     HERE: got valid ship")
         if (alreadyReady(a)){
-            log?.info("     HERE: got already has hullmod")
+            //log?.info("     HERE: got already has hullmod")
             var map: HashMap<Int?, SCData?> = Global.getCombatEngine().customData.get("SiC_SCDataMap") as HashMap<Int?, SCData?>;
             var data: SCData? = SCControllerHullmod.getFleetData(a);
             if (data == null) return
             map.put(a.originalOwner,data);
             Global.getCombatEngine().customData.put("SiC_SCDataMap",map);
             addModules(a,data);
-            log?.info("     HERE: finished already has hullmod")
+            //log?.info("     HERE: finished already has hullmod")
         }else if (isValidShipToConvert(a)){
-            log?.info("     HERE: got need to add hullmod")
+            //log?.info("     HERE: got need to add hullmod")
             var map: HashMap<Int?, SCData?> = Global.getCombatEngine().customData.get("SiC_SCDataMap") as HashMap<Int?, SCData?>;
             val force = a.originalOwner
             var data: SCData? = null;
@@ -53,7 +53,7 @@ class SicMidCombatAdder2 : FleetMemberDeploymentListener{
             if (data == null) return
             refitShip(a,data);
             addModules(a,data);
-            log?.info("     HERE: finished need to add hullmod")
+            //log?.info("     HERE: finished need to add hullmod")
         }
         //log?.info(" isValidShipToConvert: is valid ship");
         //log?.info(" isValidShipToConvert: got data from other source?"+(data != null));

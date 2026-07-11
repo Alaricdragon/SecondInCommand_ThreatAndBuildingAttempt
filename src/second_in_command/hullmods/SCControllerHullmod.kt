@@ -19,7 +19,7 @@ import second_in_command.skills.PlayerLevelEffects
 
 class SCControllerHullmod : BaseHullMod() {
     companion object {
-        val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
+        //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var secOverrideKey = "SiC_SkillsOverrider";
         var noSkillTagHullmodID = "sc_no_skill";
         fun getFleetData(ship: ShipAPI?) : SCData? {
@@ -43,10 +43,10 @@ class SCControllerHullmod : BaseHullMod() {
             return null;
         }
         fun addHullmodAfterShipCreation(ship: ShipAPI?,  data: SCData?){
-            log?.info("seeing if I can add ship of; name: "+ship?.name+" id: "+ship?.id);
+            //log?.info("seeing if I can add ship of; name: "+ship?.name+" id: "+ship?.id);
             if (ship == null || ship.fleetMember == null || ship.fleetMember.variant == null) return//for command shuttle
             //ship.getFleetMember().setCustomData(NANO_THIEF_SIC_HULLMOD_FLEET_KEY,fleet);
-            log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
+            //log?.info("adding ship; name: "+ship?.name+" id: "+ship?.id);
             if (ship?.variant?.hasHullMod("sc_skill_controller") == false){
                 //log?.info("-adding hullmod...")
                 val OVERWRITER = ship.variant //Global.getSettings().getVariant("Abyssal_XO_ReclaimCore_Blank").clone();
