@@ -75,7 +75,7 @@ class SicMidCombatAdder2 : FleetMemberDeploymentListener{
         SCControllerHullmod.addHullmodAfterShipCreation(shipAPI, data);
     }
     private fun addModules(shipAPI: ShipAPI, data: SCData?){
-        if (true) return
+        //if (true) return
         val childs = ArrayList<ShipAPI?>()
         childs.addAll(shipAPI.childModulesCopy)
         var b = 0;
