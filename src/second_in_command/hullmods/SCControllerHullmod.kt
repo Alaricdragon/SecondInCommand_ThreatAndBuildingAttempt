@@ -88,7 +88,7 @@ class SCControllerHullmod : BaseHullMod() {
             var playerfleet = Global.getSector().playerFleet ?: return
             if (playerfleet.fleetData?.membersListCopy == null) return
             for (member in playerfleet.fleetData.membersListCopy) {
-                if (!member.variant.hasHullMod("sc_skill_controller") && !member.variant.hasHullMod(noSkillTagHullmodID)) {
+                if (!member.variant.hasHullMod("sc_skill_controller") && !member.variant.hasHullMod(noSkillTagHullmodID) && !member.hullSpec.hasTag(noSkillTagHullmodID)) {
                     if (member.variant.source != VariantSource.REFIT) {
                         var variant = member.variant.clone();
                         variant.originalVariant = null;
@@ -121,9 +121,6 @@ class SCControllerHullmod : BaseHullMod() {
     override fun applyEffectsAfterShipCreation(ship: ShipAPI?, id: String?) {
 
         //if (!Global.getCombatEngine().hasPluginOfClass(SiCMidCombatAdder::class.java)){
-        if (!Global.getCombatEngine().listenerManager.hasListener(SicMidCombatAdder2::class.java)){
-            Global.getCombatEngine().listenerManager.addListener(SicMidCombatAdder2())
-        }
         //Dmod overlay
         if (SCSettings.reducedDmodOverlay) {
             if (!ship!!.variant.hasHullMod("comp_structure") && DModManager.getNumDMods(ship!!.variant) in 1..2) {
@@ -157,6 +154,10 @@ class SCControllerHullmod : BaseHullMod() {
     override fun applyEffectsBeforeShipCreation(hullSize: ShipAPI.HullSize?, stats: MutableShipStatsAPI?, id: String?) {
         var member = stats?.fleetMember ?: return
         var fleet = member.fleetData?.fleet ?: return
+
+        if (!Global.getCombatEngine().listenerManager.hasListener(SicMidCombatAdder2::class.java)){
+            Global.getCombatEngine().listenerManager.addListener(SicMidCombatAdder2())
+        }
 
         if (fleet != Global.getSector().playerFleet && Global.getSector().playerFleet?.fleetData?.membersListCopy?.contains(member) == true) {
             //Fix for battles where you join an ally, as those set the members fleet to theirs.
