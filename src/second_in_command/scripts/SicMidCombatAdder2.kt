@@ -11,6 +11,7 @@ import kotlin.collections.contains
 import org.apache.log4j.Logger
 
 class SicMidCombatAdder2 : FleetMemberDeploymentListener{
+    var addModules = Global.getSettings().getBoolean("sc_applyToModules");
     init{
         //val log: Logger? = Global.getLogger(SCControllerHullmod::class.java)
         var map: HashMap<Int?, SCData?> = HashMap<Int?, SCData?>()
@@ -75,7 +76,7 @@ class SicMidCombatAdder2 : FleetMemberDeploymentListener{
         SCControllerHullmod.addHullmodAfterShipCreation(shipAPI, data);
     }
     private fun addModules(shipAPI: ShipAPI, data: SCData?){
-        if (true) return
+        if (!addModules) return
         val childs = ArrayList<ShipAPI?>()
         childs.addAll(shipAPI.childModulesCopy)
         var b = 0;
